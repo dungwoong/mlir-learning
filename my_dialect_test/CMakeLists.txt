@@ -19,11 +19,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_definitions(${LLVM_DEFINITIONS})
 
 # 2. Automate TableGen code generation from FooOps.td
+# note this will be put in the build/ folder. It's included in the add_mlir_dialect_library so the linking works
 set(LLVM_TARGET_DEFINITIONS include/tens/Ops.td)
-mlir_tablegen(include/tens/Dialect.h.inc -gen-dialect-decls)
-mlir_tablegen(include/tens/Dialect.cpp.inc -gen-dialect-defs)
-mlir_tablegen(include/tens/Ops.h.inc -gen-op-decls)
-mlir_tablegen(include/tens/Ops.cpp.inc -gen-op-defs)
+mlir_tablegen(tens/Dialect.h.inc -gen-dialect-decls)
+mlir_tablegen(tens/Dialect.cpp.inc -gen-dialect-defs)
+mlir_tablegen(tens/Ops.h.inc -gen-op-decls)
+mlir_tablegen(tens/Ops.cpp.inc -gen-op-defs)
 add_public_tablegen_target(TensOpsIncGen)
 
 # 3. Create the C++ Dialect Library
@@ -37,3 +38,9 @@ add_mlir_dialect_library(MLIRTensDialect
   MLIRIR
   MLIRSupport
 )
+
+# compile main.cpp
+# llvm_update_compile_flags is defined in AddLLVM.cmake which adjusts compile flags to how llvm/mlir was built
+add_llvm_executable(tens-test tools/main.cpp)
+llvm_update_compile_flags(tens-test)
+target_link_libraries(tens-test PRIVATE MLIRTensDialect MLIRIR)
