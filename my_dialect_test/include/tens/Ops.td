@@ -66,5 +66,20 @@ def SquareOp : Tens_Op<"square", [Pure]> {
     let assemblyFormat = "$x attr-dict `:` type($x) `->` type($result)";
 }
 
+def MatMulOp : Tens_Op<"matmul", [Pure]> {
+    let summary = "matrix multiplication";
+    let description = [{
+        Multiplies two rank-2 f64 tensors: (MxK) x (KxN) -> (MxN).
+    }];
+    let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
+    let results = (outs F64Tensor:$result);
+    let builders = [
+        OpBuilder<(ins "Value":$lhs, "Value":$rhs)>
+    ];
+    let assemblyFormat =
+        "$lhs `,` $rhs attr-dict `:` type($lhs) `,` type($rhs) `->` type($result)";
+    let hasVerifier = 1;
+}
+
 // need stuff after endif to parse correctly
 #endif

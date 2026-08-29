@@ -8,4 +8,11 @@
 #include "mlir/Interfaces/FunctionInterfaces.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
 
+// this header file contains dialect decl
+#include "tens/TensOpsDialect.h.inc"
+
+// this contains decls of the operations
+#define GET_OP_CLASSES
+#include "tens/Ops.h.inc"
+
 #endif
