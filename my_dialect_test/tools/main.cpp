@@ -6,11 +6,17 @@
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Verifier.h"
+#include "tens/Passes.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Pass/PassManager.h"
 
 int main() {
     mlir::MLIRContext context;
     context.getOrLoadDialect<mlir::tens::TensDialect>();
     context.getOrLoadDialect<mlir::func::FuncDialect>();
+    context.getOrLoadDialect<mlir::linalg::LinalgDialect>();
+    context.getOrLoadDialect<mlir::tensor::TensorDialect>();
 
     mlir::OpBuilder builder(&context);
     auto loc = builder.getUnknownLoc();
@@ -37,5 +43,12 @@ int main() {
 
     module.print(llvm::outs());
     llvm::outs() << "\n";
+
+    mlir::PassManager pm(&context);
+    pm.addPass(mlir::tens::createLowerToLinalgPass());
+    if (failed(pm.run(module))) {
+    llvm::errs() << "pass failed\n";
+        return 1;
+    }
     return 0;
 }

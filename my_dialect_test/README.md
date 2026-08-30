@@ -43,3 +43,7 @@ mlir_tablegen(include/tens/TensOpsDialect.cpp.inc -gen-dialect-defs)
 
 - VERIFICATION: `if llvm::failed(mlir::verify(module))`
 - ERROR: `llvm::errs() << "...";`
+
+# Transforms and passes
+- I want to look at passes(e.g. combine ones + square into just ones)
+- Then, I want to lower to some other dialect.
