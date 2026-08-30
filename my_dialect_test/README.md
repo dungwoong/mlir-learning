@@ -47,3 +47,19 @@ mlir_tablegen(include/tens/TensOpsDialect.cpp.inc -gen-dialect-defs)
 # Transforms and passes
 - I want to look at passes(e.g. combine ones + square into just ones)
 - Then, I want to lower to some other dialect.
+
+- in Passes.h, you need a `std::unique_ptr<mlir::Pass> createYourPass();`
+
+In your passname e.g. `LowerToLinalg.cpp`, you make pattern rewriter and pass wrapper.
+
+Pattern Rewriter
+- Pattern rewriter has `matchAndRewrite`
+- it calls once per MatmulOp
+- You have to use rewriter to create stuff or replace ops.
+
+PassWrapper
+- CRTP curiously recurring template pattern: pass your own type as the template arg so in functions like copy() or whatever they know your type already.
+- MLIR will handle scheduling and call your pass once per matching op
+- We take our pattern and add it to the list so then you try to apply patterns to the operation basically.
+
+To add more stuff, you can just add new rewriters to your pass, and add them to the PassWrapper. After, it just comes down to knowing how to instantiate the other ops, which is pretty difficult ngl. Next step is figuring out where Claude pulled that from.

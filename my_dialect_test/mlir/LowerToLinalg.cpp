@@ -3,6 +3,7 @@
 
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -26,14 +27,50 @@ struct MatMulToLinalg : public OpRewritePattern<tens::MatMulOp> {
         rewriter.replaceOp(op, matmul.getResult(0));
         return success();
     }
-}
+};
+
+struct OnesToLinalg : public OpRewritePattern<tens::OnesOp> {
+    using OpRewritePattern::OpRewritePattern;
+
+    LogicalResult matchAndRewrite(tens::OnesOp op, PatternRewriter &rewriter) const override {
+        Location loc = op.getLoc();
+        auto resultType = llvm::cast<RankedTensorType>(op.getType());
+        Value one = arith::ConstantOp::create(rewriter, loc, rewriter.getF64FloatAttr(1.0));
+
+        // value range isn't needed, need to look at .h.inc for default values
+        Value init = tensor::SplatOp::create(rewriter, loc, one, resultType, ValueRange{});
+
+        rewriter.replaceOp(op, init);
+        return success();
+    }
+};
+
+struct SquareToLinalg : public OpRewritePattern<tens::SquareOp> {
+    using OpRewritePattern::OpRewritePattern;
+
+    LogicalResult matchAndRewrite(tens::SquareOp op, PatternRewriter &rewriter) const override {
+        Location loc = op.getLoc();
+        auto resultType = llvm::cast<RankedTensorType>(op.getType());
+        Value init = tensor::EmptyOp::create(rewriter, loc, resultType.getShape(),
+                                              resultType.getElementType());
+        auto mapOp = linalg::MapOp::create(
+            rewriter, loc, ValueRange{op.getX()}, init,
+            [&](OpBuilder &b, Location loc, ValueRange args) {
+                Value squared = arith::MulFOp::create(b, loc, args[0], args[0]);
+                linalg::YieldOp::create(b, loc, squared);
+            });
+
+        rewriter.replaceOp(op, mapOp.getResult());
+        return success();
+    }
+};
 
 struct LowerToLinalgPass
     : public PassWrapper<LowerToLinalgPass, OperationPass<ModuleOp>> {
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
-    patterns.add<MatMulToLinalg>(&getContext());
-    if (failed(applyPatternsAndFoldGreedily(getOperation(),
+    patterns.add<MatMulToLinalg, OnesToLinalg, SquareToLinalg>(&getContext());
+    if (failed(applyPatternsGreedily(getOperation(),
                                              std::move(patterns))))
       signalPassFailure();
   }

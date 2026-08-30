@@ -24,25 +24,23 @@ int main() {
     mlir::ModuleOp module = mlir::ModuleOp::create(loc);
     builder.setInsertionPointToEnd(module.getBody());
 
+    auto tensorType = mlir::RankedTensorType::get({2, 2}, builder.getF64Type());
+
     // https://mlir.llvm.org/doxygen/classmlir_1_1Builder.html#a5e44a1083e200c0aea501f30f4ddc62c
-    auto funcType = builder.getFunctionType({}, {});
+    auto funcType = builder.getFunctionType({}, {tensorType});
     auto funcOp = mlir::func::FuncOp::create(builder, loc, "main", funcType);
     builder.setInsertionPointToStart(funcOp.addEntryBlock());
 
-    auto tensorType = mlir::RankedTensorType::get({2, 3}, builder.getF64Type());
     auto onesOp = mlir::tens::OnesOp::create(builder, loc, tensorType);
     auto squareOp = mlir::tens::SquareOp::create(builder, loc, onesOp.getResult());
-    mlir::tens::MatMulOp::create(builder, loc, onesOp.getResult(), squareOp.getResult());
+    auto matmulOp = mlir::tens::MatMulOp::create(builder, loc, onesOp.getResult(), squareOp.getResult());
     
-    mlir::func::ReturnOp::create(builder, loc);
+    mlir::func::ReturnOp::create(builder, loc, matmulOp.getResult());
 
     if (llvm::failed(mlir::verify(module))) {
         llvm::errs() << "module verification failed\n";
         return 1;
     }
-
-    module.print(llvm::outs());
-    llvm::outs() << "\n";
 
     mlir::PassManager pm(&context);
     pm.addPass(mlir::tens::createLowerToLinalgPass());
@@ -50,5 +48,8 @@ int main() {
     llvm::errs() << "pass failed\n";
         return 1;
     }
+
+    module.print(llvm::outs());
+    llvm::outs() << "\n";
     return 0;
 }

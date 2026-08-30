@@ -30,6 +30,7 @@ add_public_tablegen_target(TensOpsIncGen)
 # 3. Create the C++ Dialect Library
 add_mlir_dialect_library(MLIRTensDialect
   mlir/Dialect.cpp
+  mlir/LowerToLinalg.cpp
 
   DEPENDS
   TensOpsIncGen
@@ -39,10 +40,11 @@ add_mlir_dialect_library(MLIRTensDialect
   MLIRSupport
   MLIRLinalgDialect
   MLIRTensorDialect
+  MLIRArithDialect
 )
 
 # compile main.cpp
 # llvm_update_compile_flags is defined in AddLLVM.cmake which adjusts compile flags to how llvm/mlir was built
 add_llvm_executable(tens-test tools/main.cpp)
 llvm_update_compile_flags(tens-test)
-target_link_libraries(tens-test PRIVATE MLIRTensDialect MLIRIR MLIRFuncDialect MLIRLinalgDialect MLIRTensorDialect)
+target_link_libraries(tens-test PRIVATE MLIRTensDialect MLIRIR MLIRFuncDialect MLIRLinalgDialect MLIRTensorDialect MLIRArithDialect)
