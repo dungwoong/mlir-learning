@@ -43,4 +43,4 @@ add_mlir_dialect_library(MLIRTensDialect
 # llvm_update_compile_flags is defined in AddLLVM.cmake which adjusts compile flags to how llvm/mlir was built
 add_llvm_executable(tens-test tools/main.cpp)
 llvm_update_compile_flags(tens-test)
-target_link_libraries(tens-test PRIVATE MLIRTensDialect MLIRIR)
+target_link_libraries(tens-test PRIVATE MLIRTensDialect MLIRIR MLIRFuncDialect)

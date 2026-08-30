@@ -30,5 +30,23 @@ void MatMulOp::build(OpBuilder &builder, OperationState &state, Value lhs,
 
 LogicalResult MatMulOp::verify() {
   // placeholder — return success for now, add real shape checks later
+  auto lhsType = llvm::dyn_cast<RankedTensorType>(getLhs().getType());
+  auto rhsType = llvm::dyn_cast<RankedTensorType>(getRhs().getType());
+
+  if (!lhsType || !rhsType) {
+    return emitOpError("Operands must be ranked Tensors");
+  }
+
+  if (lhsType.getRank() != 2 || rhsType.getRank() != 2) {
+    return emitOpError("Operands must be rank-2 tensors, got ranks ") <<
+    lhsType.getRank() << " and " << rhsType.getRank();
+  }
+  int64_t lhsK = lhsType.getDimSize(1);
+  int64_t rhsK = rhsType.getDimSize(0);
+  if (lhsK != ShapedType::kDynamic && rhsK != ShapedType::kDynamic &&
+      lhsK != rhsK)
+    return emitOpError("inner dimensions must match, got ")
+           << lhsK << " and " << rhsK;
+
   return success();
 }

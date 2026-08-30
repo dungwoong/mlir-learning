@@ -24,3 +24,22 @@ mlir_tablegen(include/tens/TensOpsDialect.cpp.inc -gen-dialect-defs)
 - then just `ninja`
 
 - In the Dialect.cpp, we put functions that correspond to the verifier or whatever. Need to actually inspect the .inc files to understand what we are doing.
+
+# Adding Builders
+- You have an OperationState, which defines the state of your thing before the operation is actually built.
+- You also have a verify function.
+
+- So first, you have to initialize context `mlir::MLIRContext context`
+- then, you want to `getOrLoadDialect` for stuff like `mlir::tens::TensDialect` or `mlir::func::FuncDialect`
+- Then you declare an `OpBuilder` given the context
+- You have the stuff like module and then `setInsertionPoint...` operators
+- Whenever you want to create some op, you use the `create` method e.g. `mlir::func::FuncOp::create(builder, loc, ...)`
+- Note that this will create an empty state and call those `create` methods you manually implemented earlier.
+
+# Adding matmul verifier
+- inspect the `build/tens/Ops.h.inc` for operations. They have getLhs, getRhs
+- Then, you just have to know the types of the stuff lol
+- Then, I added a sample for what I want.
+
+- VERIFICATION: `if llvm::failed(mlir::verify(module))`
+- ERROR: `llvm::errs() << "...";`
