@@ -63,3 +63,32 @@ PassWrapper
 - We take our pattern and add it to the list so then you try to apply patterns to the operation basically.
 
 To add more stuff, you can just add new rewriters to your pass, and add them to the PassWrapper. After, it just comes down to knowing how to instantiate the other ops, which is pretty difficult ngl. Next step is figuring out where Claude pulled that from.
+
+# Where do I find the stuff in their source code?
+- in mlir/lib/Dialect/Linalg/IR/LinalgOps.cpp, we find `MapOp::build` where you have basically what I had before(?)
+
+e.g.
+
+```
+void MapOp::build(
+    OpBuilder &builder, OperationState &result, ValueRange inputs, Value init,
+    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuild,
+    ArrayRef<NamedAttribute> attributes) 
+```
+
+So we see the ValueRange inputs, an init value, and then the function ref.
+
+We do the following:
+
+```
+auto mapOp = linalg::MapOp::create(
+    rewriter, loc, ValueRange{op.getX()}, init,
+    [&](OpBuilder &b, Location loc, ValueRange args) {
+        Value squared = arith::MulFOp::create(b, loc, args[0], args[0]);
+        linalg::YieldOp::create(b, loc, squared);
+    });
+```
+
+# Python bindings
+- make sure MLIR_ENABLE_BINDINGS_PYTHON was enabled when building llvm
+- Look at llvm/mlir/examples/standalone and look at the python folder.
