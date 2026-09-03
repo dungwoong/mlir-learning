@@ -1,4 +1,4 @@
-#include "Tens-c/Dialects.h"
+#include "tens-c/Dialects.h"
 #include "tens/Dialect.h"
 #include "mlir/CAPI/Registration.h"
 
