@@ -1,15 +1,4 @@
-//===- StandaloneExtension.cpp - Extension module -------------------------===//
-//
-// This is the nanobind version of the example module. There is also a pybind11
-// example in StandaloneExtensionPybind11.cpp.
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-
-#include "Standalone-c/Dialects.h"
+#include "tens/Dialects.h"
 #include "mlir-c/Dialect/Arith.h"
 #include "mlir/Bindings/Python/IRCore.h"
 #include "mlir/Bindings/Python/IRTypes.h"
@@ -20,9 +9,9 @@ namespace nb = nanobind;
 
 struct PyCustomType
     : mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyConcreteType<PyCustomType> {
-  static constexpr IsAFunctionTy isaFunction = mlirStandaloneTypeIsACustomType;
+  static constexpr IsAFunctionTy isaFunction = mlirTensTypeIsACustomType;
   static constexpr GetTypeIDFunctionTy getTypeIdFunction =
-      mlirStandaloneCustomTypeGetTypeID;
+      mlirTensCustomTypeGetTypeID;
   static constexpr const char *pyClassName = "CustomType";
   using PyConcreteType::PyConcreteType;
 
@@ -34,7 +23,7 @@ struct PyCustomType
                context) {
           return PyCustomType(
               context->getRef(),
-              mlirStandaloneCustomTypeGet(
+              mlirTensCustomTypeGet(
                   context.get()->get(),
                   mlirStringRefCreateFromCString(value.c_str())));
         },
@@ -42,15 +31,12 @@ struct PyCustomType
   }
 };
 
-NB_MODULE(_standaloneDialectsNanobind, m) {
-  //===--------------------------------------------------------------------===//
-  // standalone dialect
-  //===--------------------------------------------------------------------===//
-  auto standaloneM = m.def_submodule("standalone");
+NB_MODULE(_tensDialectsNanobind, m) {
+  auto tensM = m.def_submodule("tens");
 
-  PyCustomType::bind(standaloneM);
+  PyCustomType::bind(tensM);
 
-  standaloneM.def(
+  tensM.def(
       "register_dialects",
       [](mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::DefaultingPyMlirContext
              context,
@@ -68,7 +54,7 @@ NB_MODULE(_standaloneDialectsNanobind, m) {
       },
       nb::arg("context").none() = nb::none(), nb::arg("load") = true);
 
-  standaloneM.def(
+  tensM.def(
       "print_fp_type",
       [](const mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyF16Type &,
          nb::handle stderr_obj) {
