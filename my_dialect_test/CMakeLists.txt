@@ -16,6 +16,12 @@ include(AddMLIR)
 # the example project sets it manually too.
 set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 
+# The static dialect / C-API libraries get pulled into the shared
+# libTensPythonCAPI.so that the Python extension links against, so every object
+# needs to be position-independent. (The upstream standalone example gets this
+# transitively via include(HandleLLVMOptions).)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 include_directories(${LLVM_INCLUDE_DIRS} ${MLIR_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_definitions(${LLVM_DEFINITIONS})
@@ -39,6 +45,8 @@ add_mlir_dialect_library(MLIRTensDialect
   LINK_LIBS
   MLIRIR
   MLIRSupport
+  MLIRPass
+  MLIRTransformUtils
   MLIRLinalgDialect
   MLIRTensorDialect
   MLIRArithDialect
@@ -47,9 +55,11 @@ add_mlir_dialect_library(MLIRTensDialect
 # --- C API library ---
 add_mlir_public_c_api_library(TensCAPI
   mlir/capi/Dialects.cpp
+  mlir/capi/Passes.cpp
 
   LINK_LIBS PUBLIC
   MLIRTensDialect
+  MLIRPass
   MLIRCAPIIR
 )
 

@@ -18,7 +18,16 @@ struct MatMulToLinalg : public OpRewritePattern<tens::MatMulOp> {
         Location loc = op.getLoc();
         auto resultType = llvm::cast<RankedTensorType>(op.getType());
 
-        Value init = tensor::EmptyOp::create(rewriter, loc, resultType.getShape(), resultType.getElementType());
+        Value empty = tensor::EmptyOp::create(rewriter, loc, resultType.getShape(), resultType.getElementType());
+
+        // linalg.matmul accumulates into its `outs` operand, so the accumulator
+        // has to start at zero — otherwise the result depends on whatever
+        // tensor.empty happened to hand back.
+        Value zero = arith::ConstantOp::create(rewriter, loc,
+                                               rewriter.getF64FloatAttr(0.0));
+        Value init = linalg::FillOp::create(rewriter, loc, ValueRange{zero},
+                                            ValueRange{empty})
+                         .getResult(0);
 
         auto matmul = linalg::MatmulOp::create(
             rewriter, loc, resultType, ValueRange{op.getLhs(), op.getRhs()}, ValueRange{init}
@@ -67,6 +76,18 @@ struct SquareToLinalg : public OpRewritePattern<tens::SquareOp> {
 
 struct LowerToLinalgPass
     : public PassWrapper<LowerToLinalgPass, OperationPass<ModuleOp>> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerToLinalgPass)
+
+  StringRef getArgument() const final { return "tens-lower-to-linalg"; }
+  StringRef getDescription() const final {
+    return "Lower the tens dialect (ones/square/matmul) to linalg on tensors";
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    registry.insert<linalg::LinalgDialect, tensor::TensorDialect,
+                    arith::ArithDialect>();
+  }
+
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
     patterns.add<MatMulToLinalg, OnesToLinalg, SquareToLinalg>(&getContext());
@@ -79,4 +100,8 @@ struct LowerToLinalgPass
 
 std::unique_ptr<mlir::Pass> mlir::tens::createLowerToLinalgPass() {
   return std::make_unique<LowerToLinalgPass>();
+}
+
+void mlir::tens::registerLowerToLinalgPass() {
+  ::mlir::PassRegistration<LowerToLinalgPass>();
 }
