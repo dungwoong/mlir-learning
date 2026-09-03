@@ -1,4 +1,4 @@
-#include "tens/Dialects.h"
+#include "tens-c/Dialects.h"
 #include "mlir-c/Dialect/Arith.h"
 #include "mlir/Bindings/Python/IRCore.h"
 #include "mlir/Bindings/Python/IRTypes.h"
